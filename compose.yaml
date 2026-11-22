@@ -1,0 +1,73 @@
+name: nw-firewall
+services:
+  firewall:
+    image: nw26-firewall:local
+    build: ./firewall
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv6.conf.all.disable_ipv6: "1"
+      net.ipv6.conf.default.disable_ipv6: "1"
+    environment:
+      ADMIN_CIDRS: ${ADMIN_CIDRS:?Copy .env.example to .env and configure it}
+      ADMIN_USER: ${ADMIN_USER:-fwadmin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${SSH_PORT:-2222}:22"
+    volumes:
+      - ./logs:/var/log/firewall
+    networks:
+      outside:
+        ipv4_address: 172.28.10.2
+      inside:
+        ipv4_address: 172.28.20.2
+    healthcheck:
+      test: [CMD-SHELL, "test -f /run/firewall.ready && kill -0 $$(cat /run/logger.pid) && kill -0 $$(cat /run/sshd.pid)"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+  web:
+    build: ./web
+    cap_add: [NET_ADMIN]
+    depends_on:
+      firewall:
+        condition: service_healthy
+    networks:
+      inside:
+        ipv4_address: 172.28.20.10
+    # No published ports: traffic must enter through firewall.
+  test-allowed:
+    image: nw26-firewall:local
+    profiles: [test]
+    entrypoint: [python3, /tests/check.py]
+    environment:
+      EXPECT_SSH: allow
+      ADMIN_USER: ${ADMIN_USER:-fwadmin}
+      SSHPASS: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      outside:
+        ipv4_address: 172.28.10.100
+  test-blocked:
+    image: nw26-firewall:local
+    profiles: [test]
+    entrypoint: [python3, /tests/check.py]
+    environment:
+      EXPECT_SSH: block
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      outside:
+        ipv4_address: 172.28.10.101
+networks:
+  outside:
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
+  inside:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.20.0/24
