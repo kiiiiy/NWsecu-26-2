@@ -1,35 +1,15 @@
 const express = require("express");
+const { readLogs } = require("./logs");
 
 const app = express();
 const PORT = 3000;
+const LOG_PATH = process.env.FIREWALL_LOG_PATH || "/var/log/firewall/firewall.log";
 
-app.use(express.json());
-
-// 임시 로그 데이터
-// 추후 실제 ulogd2 로그 파일로 교체
-const logs = [
-    {
-        timestamp: "2026-11-20 18:30:00",
-        source_ip: "192.168.0.10",
-        destination_port: 80,
-        protocol: "TCP",
-        action: "ALLOW"
-    },
-    {
-        timestamp: "2026-11-20 18:31:00",
-        source_ip: "192.168.0.20",
-        destination_port: 22,
-        protocol: "TCP",
-        action: "BLOCK"
-    },
-    {
-        timestamp: "2026-11-20 18:32:00",
-        source_ip: "192.168.0.30",
-        destination_port: 80,
-        protocol: "TCP",
-        action: "ALLOW"
-    }
-];
+// 브라우저가 이전 응답을 재사용하지 않도록 한다.
+app.use("/api", (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+});
 
 // API 서버 상태 확인
 app.get("/api/status", (req, res) => {
@@ -40,15 +20,17 @@ app.get("/api/status", (req, res) => {
 });
 
 // 최근 접근 로그 조회
-app.get("/api/logs", (req, res) => {
+app.get("/api/logs", async (req, res) => {
+    const logs = await readLogs(LOG_PATH);
     res.json({
         total: logs.length,
-        logs: [...logs].reverse()
+        logs: logs.slice(-100).reverse()
     });
 });
 
 // 허용 및 차단 통계 조회
-app.get("/api/statistics", (req, res) => {
+app.get("/api/statistics", async (req, res) => {
+    const logs = await readLogs(LOG_PATH);
     const allowed = logs.filter(
         log => log.action === "ALLOW"
     ).length;
@@ -62,6 +44,11 @@ app.get("/api/statistics", (req, res) => {
         allowed: allowed,
         blocked: blocked
     });
+});
+
+app.use((error, req, res, next) => {
+    console.error("Firewall log read failed:", error.code || error.message);
+    res.status(503).json({ error: "방화벽 로그를 읽을 수 없습니다." });
 });
 
 // 서버 실행
