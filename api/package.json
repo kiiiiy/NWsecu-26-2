@@ -1,0 +1,12 @@
+{
+  "name": "network-security-api",
+  "version": "1.0.0",
+  "description": "Mini SOC Network Monitoring API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

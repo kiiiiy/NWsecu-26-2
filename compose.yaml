@@ -1,0 +1,79 @@
+services:
+  # Firewall
+  firewall:
+    build:
+      context: ./firewall
+      dockerfile: Dockerfile
+    container_name: firewall
+
+    cap_add:
+      - NET_ADMIN
+
+    sysctls:
+      net.ipv4.ip_forward: "1"
+
+    ports:
+      - "80:80"
+      - "2222:22"  # 관리자 SSH (추후 확정)
+
+    networks:
+      external_net:
+        ipv4_address: 172.28.10.2
+        interface_name: eth0
+      internal_net:
+        ipv4_address: 172.28.20.2
+        interface_name: eth1
+
+    restart: unless-stopped
+
+  # Nginx Web Server
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: web
+
+    expose:
+      - "80"
+
+    networks:
+      internal_net:
+        ipv4_address: 172.28.20.10
+
+    restart: unless-stopped
+
+  # Node.js API Server
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: api
+
+    expose:
+      - "3000"
+
+    networks:
+      internal_net:
+        ipv4_address: 172.28.20.20
+
+    restart: unless-stopped
+
+networks:
+  # 외부 네트워크
+  external_net:
+    name: network-security-external
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
+          gateway: 172.28.10.1
+
+  # 내부 네트워크
+  internal_net:
+    name: network-security-internal
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.20.0/24
+          gateway: 172.28.20.1
