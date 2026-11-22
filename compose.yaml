@@ -1,79 +1,84 @@
+name: nw-firewall
 services:
-  # Firewall
-  firewall:
-    build:
-      context: ./firewall
-      dockerfile: Dockerfile
-    container_name: firewall
-
-    cap_add:
-      - NET_ADMIN
-
-    sysctls:
-      net.ipv4.ip_forward: "1"
-
-    ports:
-      - "80:80"
-      - "2222:22"  # 관리자 SSH (추후 확정)
-
-    networks:
-      external_net:
-        ipv4_address: 172.28.10.2
-        interface_name: eth0
-      internal_net:
-        ipv4_address: 172.28.20.2
-        interface_name: eth1
-
-    restart: unless-stopped
-
-  # Nginx Web Server
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: web
-
-    expose:
-      - "80"
-
-    networks:
-      internal_net:
-        ipv4_address: 172.28.20.10
-
-    restart: unless-stopped
-
-  # Node.js API Server
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: api
-
+    build: ./api
     expose:
       - "3000"
-
+    volumes:
+      - ./logs:/var/log/firewall:ro
     networks:
-      internal_net:
+      inside:
         ipv4_address: 172.28.20.20
-
-    restart: unless-stopped
-
+  firewall:
+    image: nw26-firewall:local
+    build: ./firewall
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv6.conf.all.disable_ipv6: "1"
+      net.ipv6.conf.default.disable_ipv6: "1"
+    environment:
+      ADMIN_CIDRS: ${ADMIN_CIDRS:?Copy .env.example to .env and configure it}
+      ADMIN_USER: ${ADMIN_USER:-fwadmin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${SSH_PORT:-2222}:22"
+    volumes:
+      - ./logs:/var/log/firewall
+    networks:
+      outside:
+        ipv4_address: 172.28.10.2
+      inside:
+        ipv4_address: 172.28.20.2
+    healthcheck:
+      test: [CMD-SHELL, "test -f /run/firewall.ready && kill -0 $$(cat /run/logger.pid) && kill -0 $$(cat /run/sshd.pid)"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+  web:
+    build: ./web
+    cap_add: [NET_ADMIN]
+    depends_on:
+      firewall:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      inside:
+        ipv4_address: 172.28.20.10
+    # No published ports: traffic must enter through firewall.
+  test-allowed:
+    image: nw26-firewall:local
+    profiles: [test]
+    entrypoint: [python3, /tests/check.py]
+    environment:
+      EXPECT_SSH: allow
+      ADMIN_USER: ${ADMIN_USER:-fwadmin}
+      SSHPASS: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      outside:
+        ipv4_address: 172.28.10.100
+  test-blocked:
+    image: nw26-firewall:local
+    profiles: [test]
+    entrypoint: [python3, /tests/check.py]
+    environment:
+      EXPECT_SSH: block
+    volumes:
+      - ./tests:/tests:ro
+    networks:
+      outside:
+        ipv4_address: 172.28.10.101
 networks:
-  # 외부 네트워크
-  external_net:
-    name: network-security-external
-    driver: bridge
+  outside:
     ipam:
       config:
         - subnet: 172.28.10.0/24
-          gateway: 172.28.10.1
-
-  # 내부 네트워크
-  internal_net:
-    name: network-security-internal
-    driver: bridge
+  inside:
     internal: true
     ipam:
       config:
         - subnet: 172.28.20.0/24
-          gateway: 172.28.20.1
