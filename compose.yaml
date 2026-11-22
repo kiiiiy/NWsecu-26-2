@@ -1,5 +1,14 @@
 name: nw-firewall
 services:
+  api:
+    build: ./api
+    expose:
+      - "3000"
+    volumes:
+      - ./logs:/var/log/firewall:ro
+    networks:
+      inside:
+        ipv4_address: 172.28.20.20
   firewall:
     image: nw26-firewall:local
     build: ./firewall
@@ -33,6 +42,8 @@ services:
     depends_on:
       firewall:
         condition: service_healthy
+      api:
+        condition: service_started
     networks:
       inside:
         ipv4_address: 172.28.20.10

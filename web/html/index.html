@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEAM 8 | Network Security</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div>
+                    <h2>TEAM 8</h2>
+                    <span>NETWORK SECURITY</span>
+                </div>
+            </div>
+
+            <div class="menu-label">MONITORING</div>
+            <nav>
+                <a class="menu-item" href="#traffic">
+                    <span>▥</span> Traffic Analysis
+                </a>
+                <a class="menu-item" href="#logs">
+                    <span>≡</span> Access Logs
+                </a>
+                <a class="menu-item" href="#policy">
+                    <span>▣</span> Security Policy
+                </a>
+                <a class="menu-item" href="#network">
+                    <span>⌘</span> Network Topology
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="connection">
+                    <span class="status-dot"></span>
+                    Monitoring Active
+                </div>
+                <p>Network Security Project</p>
+                <small>Team 8</small>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">MONITORING / TRAFFIC ANALYSIS</div>
+                    <h1>Network Security Dashboard</h1>
+                    <p>Docker 기반 방화벽 및 웹서버 접근 제어 모니터링</p>
+                </div>
+
+                <div class="top-info">
+                    <div class="live-status">
+                        <span class="status-dot"></span>
+                        LIVE MONITORING
+                    </div>
+                    <div id="clock">00:00:00</div>
+                </div>
+            </header>
+
+            <!-- Traffic Analysis -->
+            <section id="traffic" class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Traffic Analysis</h2>
+                        <p>네트워크 접근 허용 및 차단 통계</p>
+                    </div>
+                    <span class="tag">API CONNECTED</span>
+                </div>
+
+                <div class="traffic-summary">
+                    <div>
+                        <span class="summary-label">Total Requests</span>
+                        <strong id="total-count">0</strong>
+                    </div>
+                    <div>
+                        <span class="summary-label">Allowed</span>
+                        <strong class="green-text" id="traffic-allowed">0</strong>
+                    </div>
+                    <div>
+                        <span class="summary-label">Blocked</span>
+                        <strong class="red-text" id="traffic-blocked">0</strong>
+                    </div>
+                </div>
+
+                <div class="traffic-bars">
+                    <div class="bar-group">
+                        <div class="bar-label">
+                            <span>Allowed Traffic</span>
+                            <strong id="allowed-percent">0.0%</strong>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar allowed-bar" id="allowed-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="bar-group">
+                        <div class="bar-label">
+                            <span>Blocked Traffic</span>
+                            <strong id="blocked-percent">0.0%</strong>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar blocked-bar" id="blocked-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Access Logs -->
+            <section id="logs" class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Recent Access Logs</h2>
+                        <p>방화벽에서 수집한 최근 네트워크 접근 기록</p>
+                    </div>
+                    <button id="refresh-btn" class="refresh-btn">↻ Refresh</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>SOURCE</th>
+                                <th>DESTINATION</th>
+                                <th>PORT</th>
+                                <th>PROTOCOL</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer">
+                    <span id="log-count">Showing recent events</span>
+                    <span>Data provided by Network Security API</span>
+                </div>
+            </section>
+
+            <!-- Security Policy -->
+            <section id="policy" class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Security Policy</h2>
+                        <p>방화벽 접근 제어 정책</p>
+                    </div>
+                    <span class="tag">FIREWALL RULES</span>
+                </div>
+
+                <div class="status-grid">
+
+                    <div class="status-card">
+                        <div class="card-top">
+                            <span>Web Service</span>
+                            <span class="icon-box green">✓</span>
+                        </div>
+                        <div class="status-value">
+                            <strong class="green-text">ALLOW</strong>
+                        </div>
+                        <p>TCP Port 80 · HTTP</p>
+                    </div>
+
+                    <div class="status-card">
+                        <div class="card-top">
+                            <span>Other Traffic</span>
+                            <span class="icon-box red">⊘</span>
+                        </div>
+                        <div class="status-value">
+                            <strong class="red-text">BLOCK</strong>
+                        </div>
+                        <p>웹서비스 외 불필요한 접근 차단</p>
+                    </div>
+
+                    <div class="status-card">
+                        <div class="card-top">
+                            <span>Admin Access</span>
+                            <span class="icon-box blue">▣</span>
+                        </div>
+                        <div class="status-value">
+                            <strong>RESTRICTED</strong>
+                        </div>
+                        <p>지정된 관리자 IP 및 인증 정보</p>
+                    </div>
+
+                    <div class="status-card">
+                        <div class="card-top">
+                            <span>Network Isolation</span>
+                            <span class="icon-box purple">⌘</span>
+                        </div>
+                        <div class="status-value">
+                            <strong>ISOLATED</strong>
+                        </div>
+                        <p>External / Internal Network 분리</p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Network Topology -->
+            <section id="network" class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Network Topology</h2>
+                        <p>방화벽과 웹서버의 Docker 네트워크 분리 구조</p>
+                    </div>
+                    <span class="tag">DOCKER NETWORK</span>
+                </div>
+
+                <div class="topology">
+                    <div class="network-node">
+                        <div class="node-icon">◎</div>
+                        <h3>External User</h3>
+                        <p>Outside Network</p>
+                        <span class="node-label">EXTERNAL</span>
+                    </div>
+
+                    <div class="connection-line">
+                        <span>HTTP : 80</span>
+                        <div class="line"></div>
+                        <span class="arrow">›</span>
+                    </div>
+
+                    <div class="network-node firewall-node">
+                        <div class="node-icon">▣</div>
+                        <h3>Firewall</h3>
+                        <p>172.28.10.2</p>
+                        <p>172.28.20.2</p>
+                        <span class="node-label">SECURITY GATEWAY</span>
+                    </div>
+
+                    <div class="connection-line">
+                        <span>TCP : 80</span>
+                        <div class="line"></div>
+                        <span class="arrow">›</span>
+                    </div>
+
+                    <div class="network-node web-node">
+                        <div class="node-icon">▤</div>
+                        <h3>Nginx Server</h3>
+                        <p>172.28.20.10</p>
+                        <p>Port 80</p>
+                        <span class="node-label">WEB SERVER</span>
+                    </div>
+                </div>
+
+                <div class="network-footer">
+                    <span>
+                        <i class="legend-dot blue-dot"></i>
+                        External Network: 172.28.10.0/24
+                    </span>
+                    <span>
+                        <i class="legend-dot green-dot"></i>
+                        Internal Network: 172.28.20.0/24
+                    </span>
+                </div>
+            </section>
+
+            <footer>
+                Network Security Team Project
+                <span>Docker-based Firewall & Web Server</span>
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
